@@ -1,0 +1,93 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    ports:
+      - "8181:8181"     # qBittorrent Web UI (host:container)
+      - "9696:9696"     # Prowlarr Web UI
+      - "8686:8686"     # Lidarr Web UI
+      - "6881:6881"     # Torrenting (TCP)
+      - "6881:6881/udp" # Torrenting (UDP)
+      - "5030:5030"     # Soulseek HTTP
+      - "5031:5031"     # Soulseek HTTPS
+      - "50300:50300"   # Soulseek Download/Upload
+    environment:
+      - VPN_SERVICE_PROVIDER=mullvad
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=REDACTED
+      - WIREGUARD_ADDRESSES=10.76.51.191/32
+      - SERVER_COUNTRIES=Brazil
+      - TZ=America/Toronto
+    volumes:
+      - ./gluetun:/gluetun
+
+  qbittorrent:
+    image: qbittorrentofficial/qbittorrent-nox:latest
+    container_name: qbittorrent
+    depends_on:
+      - gluetun
+    network_mode: "service:gluetun"
+    environment:
+      - TZ=America/Toronto
+      - QBT_WEBUI_PORT=8181
+    volumes:
+      - ./qbittorrent/config:/config
+      - ./qbittorrent/downloads:/downloads
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    depends_on:
+      - gluetun
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Toronto
+    volumes:
+      - ./prowlarr/config:/config
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    depends_on:
+      - gluetun
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Toronto
+    volumes:
+      - ./lidarr/config:/config
+      - ./lidarr/music:/music
+      - ./qbittorrent/downloads:/downloads
+
+  slskd:
+    image: slskd/slskd
+    container_name: slskd
+    depends_on:
+      - gluetun
+    network_mode: "service:gluetun"
+    environment:
+      - SLSKD_REMOTE_CONFIGURATION=true
+    volumes:
+      - ./slskd:/app
+      - ./lidarr/music:/music:rw
+
+#  soularr:
+#    image: mrusse08/soularr:latest
+#    container_name: soularr
+#    depends_on:
+#      - gluetun
+#    network_mode: "service:gluetun"
+#    user: 1000:1000
+#    environment:
+#      - TZ=America/Toronto
+#      - SCRIPT_INTERVAL=300
+#    volumes:
+#      - ./slskd/downloads:/downloads
+#      - ./soularr:/data

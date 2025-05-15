@@ -1,0 +1,95 @@
+networks:
+  minecraft-network:
+    name: minecraft-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+services:
+  router:
+    image: itzg/mc-router
+    container_name: mc-router
+    networks:
+      minecraft-network:
+        ipv4_address: 172.25.0.2
+    depends_on:
+      - lazymc
+    environment:
+      MAPPING: |
+        mothfall.world=lazymc:25565
+        modded.mothfall.world=lazymc:25566
+    ports:
+      - "25565:25565"
+
+  lazymc:
+    image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+    container_name: lazymc
+    networks:
+      minecraft-network:
+        ipv4_address: 172.25.0.3
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data-vanilla:/server/vanilla:ro
+      - ./data-modded:/server/modded:ro
+
+  vanilla:
+    image: itzg/minecraft-server:java21
+    container_name: mothfall
+    networks:
+      minecraft-network:
+        ipv4_address: 172.25.0.4
+    labels:
+      - lazymc.enabled=true
+      - lazymc.group=vanilla
+      - lazymc.server.address=vanilla:25565
+      - lazymc.port=25565
+      - lazymc.server.directory=/server/vanilla
+      #
+      - lazymc.public.version=1.21.4
+      - lazymc.public.protocol=769
+    tty: true
+    stdin_open: true
+    restart: no
+    environment:
+      EULA: "TRUE"
+      TYPE: "PURPUR"
+      VERSION: "1.21.4"
+      MEMORY: "4096M"
+      MOTD: "Welcome to mothfall.world! (1.21.4)"
+    volumes:
+      - ./data-vanilla:/data
+
+  modded:
+    image: itzg/minecraft-server:java21
+    container_name: cabin-2.0.5
+    networks:
+      minecraft-network:
+        ipv4_address: 172.25.0.5
+    labels:
+      - lazymc.enabled=true
+      - lazymc.server.address=modded:25565
+      - lazymc.group=modded
+      - lazymc.port=25566
+      - lazymc.server.directory=/server/modded
+      #
+      - lazymc.public.version=1.20.1
+      - lazymc.public.protocol=763
+      - lazymc.server.forge=true
+    tty: true
+    stdin_open: true
+    restart: no
+    environment:
+      EULA: "TRUE"
+      TYPE: FORGE
+      VERSION: "1.20.1"
+      MEMORY: "6144M"
+      MOTD: "§6CABIN 2.0.5 §7on Forge 1.20.1, powered by §9Docker"
+      ICON: "https://media.forgecdn.net/avatars/thumbnails/899/846/64/64/638346046780138525.png"
+      HARDCORE: "true"
+      PVP: "false"
+      OPS: |-
+        hodux
+    volumes:
+      - ./data-modded:/data
