@@ -18,7 +18,7 @@ services:
     environment:
       - VPN_SERVICE_PROVIDER=mullvad
       - VPN_TYPE=wireguard
-      - WIREGUARD_PRIVATE_KEY=REDACTED
+      - WIREGUARD_PRIVATE_KEY=private-key
       - WIREGUARD_ADDRESSES=10.76.51.191/32
       - SERVER_COUNTRIES=Brazil
       - TZ=America/Toronto

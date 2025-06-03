@@ -8,7 +8,7 @@ networks:
 
 services:
   router:
-    image: itzg/mc-router
+    image: itzg/mc-router:latest
     container_name: mc-router
     networks:
       minecraft-network:
@@ -31,11 +31,11 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./data-vanilla:/server/vanilla:ro
-      - ./data-modded:/server/modded:ro
+      - ./vanilla:/server/vanilla:ro
+      - ./modded:/server/modded:ro
 
   vanilla:
-    image: itzg/minecraft-server:java21
+    image: itzg/minecraft-server:latest
     container_name: mothfall
     networks:
       minecraft-network:
@@ -47,23 +47,27 @@ services:
       - lazymc.port=25565
       - lazymc.server.directory=/server/vanilla
       #
-      - lazymc.public.version=1.21.4
-      - lazymc.public.protocol=769
+      - lazymc.public.version=1.21.5
+      - lazymc.public.protocol=770
+      - lazymc.time.minimum_online_time=180
+      - lazymc.join.hold.timeout=30
+      - lazymc.time.sleep_after=600
     tty: true
     stdin_open: true
     restart: no
     environment:
       EULA: "TRUE"
       TYPE: "PURPUR"
-      VERSION: "1.21.4"
-      MEMORY: "4096M"
-      MOTD: "Welcome to mothfall.world! (1.21.4)"
+      VERSION: "1.21.5"
+      MEMORY: "6144M"
+      MOTD: "Welcome to mothfall.world! (1.21.5)"
+      TZ: "America/Toronto"
     volumes:
-      - ./data-vanilla:/data
+      - ./vanilla:/data
 
   modded:
-    image: itzg/minecraft-server:java21
-    container_name: cabin-2.0.5
+    image: itzg/minecraft-server:latest
+    container_name: cabin-2.0.6
     networks:
       minecraft-network:
         ipv4_address: 172.25.0.5
@@ -77,6 +81,9 @@ services:
       - lazymc.public.version=1.20.1
       - lazymc.public.protocol=763
       - lazymc.server.forge=true
+      - lazymc.time.minimum_online_time=180
+      - lazymc.join.hold.timeout=30
+      - lazymc.time.sleep_after=600
     tty: true
     stdin_open: true
     restart: no
@@ -85,11 +92,12 @@ services:
       TYPE: FORGE
       VERSION: "1.20.1"
       MEMORY: "6144M"
-      MOTD: "§6CABIN 2.0.5 §7on Forge 1.20.1, powered by §9Docker"
+      MOTD: "Welcome to modded.mothfall.world!§r\n§6CABIN 2.0.6 §7on Forge 1.20.1, powered by §9Docker"
       ICON: "https://media.forgecdn.net/avatars/thumbnails/899/846/64/64/638346046780138525.png"
       HARDCORE: "true"
       PVP: "false"
       OPS: |-
         hodux
+      TZ: "America/Toronto"
     volumes:
-      - ./data-modded:/data
+      - ./modded:/data
